@@ -13,7 +13,7 @@ function renderBoard() {
   boardEl.innerHTML = "";
   gameState.board.forEach((cell, index) => {
     const cellEl = document.createElement("div");
-    cellEl.className = "cell";
+    cellEl.className = `cell ${cell === "X" ? "x" : cell === "O" ? "o" : ""}`;
     cellEl.textContent = cell === " " ? "" : cell;
 
     // Enable click only if player's turn and cell empty and game ongoing
@@ -29,20 +29,29 @@ function renderBoard() {
     boardEl.appendChild(cellEl);
   });
 
+  // Animate status updates
+  statusEl.classList.add("animate-pulse");
+  setTimeout(() => statusEl.classList.remove("animate-pulse"), 500);
+
   if (gameState.winner) {
     statusEl.textContent = `Player ${gameState.winner} wins!`;
+    statusEl.classList.add("text-green-600", "font-bold");
     stopPolling();
   } else if (gameState.isDraw) {
     statusEl.textContent = "It's a draw!";
+    statusEl.classList.add("text-yellow-600", "font-bold");
     stopPolling();
   } else {
     if (gameState.currentPlayer === playerSymbol) {
       statusEl.textContent = `Your turn (${playerSymbol})`;
+      statusEl.classList.add("text-blue-600");
     } else {
       if (gameState.vsBot) {
         statusEl.textContent = "Bot is thinking...";
+        statusEl.classList.add("text-gray-600");
       } else {
         statusEl.textContent = `Opponent's turn (${gameState.currentPlayer})`;
+        statusEl.classList.add("text-gray-600");
       }
     }
   }
@@ -82,9 +91,13 @@ async function makeMove(position) {
     } else {
       const error = await res.json();
       console.error('Move error:', error.error);
+      statusEl.textContent = `Error: ${error.error}`;
+      statusEl.classList.add("text-red-600");
     }
   } catch (error) {
     console.error('Error making move:', error);
+    statusEl.textContent = "Error making move. Please try again.";
+    statusEl.classList.add("text-red-600");
   }
 }
 
@@ -112,15 +125,19 @@ async function waitForQueueMatch() {
         if (data.matched) {
           gameId = data.gameId;
           statusEl.textContent = "Game started!";
+          statusEl.classList.add("text-green-600");
           await fetchState();
           startPolling();
           return;
         } else {
           statusEl.textContent = "Waiting for opponent...";
+          statusEl.classList.add("text-gray-600");
         }
       }
     } catch (e) {
       console.error("Error checking queue status", e);
+      statusEl.textContent = "Error checking queue. Please try again.";
+      statusEl.classList.add("text-red-600");
     }
     setTimeout(checkMatch, 2000);
   };
@@ -136,6 +153,7 @@ async function newGame() {
   playerSymbol = null;
 
   statusEl.textContent = "Starting new game...";
+  statusEl.classList.add("text-gray-600");
   boardEl.innerHTML = "";
 
   try {
@@ -148,15 +166,18 @@ async function newGame() {
     if (data.gameId) {
       gameId = data.gameId;
       statusEl.textContent = "Game started!";
+      statusEl.classList.add("text-green-600");
       await fetchState();
       startPolling();
     } else {
       statusEl.textContent = "Waiting for opponent...";
+      statusEl.classList.add("text-gray-600");
       waitForQueueMatch();
     }
   } catch (error) {
     console.error('Error starting game:', error);
     statusEl.textContent = "Error starting game. Please try again.";
+    statusEl.classList.add("text-red-600");
   }
 }
 
